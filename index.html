@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <style>
+    #cv {
+        display: block;
+        margin: 0 auto;
+        border: 1px solid red;
+    }
+    </style>
+</head>
+
+<body>
+    <canvas width='800' height='600' id='cv'></canvas>
+    <script src="js/Fly.js"></script>
+    <script src="js/bird.js"></script>
+    <script src="js/sky.js"></script>
+    <script src="js/land.js"></script>
+    <script src="js/pipe.js"></script>
+    <script>
+    var cv = document.getElementById('cv');
+    var ctx = cv.getContext("2d");
+    // 角度转弧度
+    function toRadin(angle) {
+        return angle / 180 * Math.PI;
+    }
+    // 弧度转角度
+    function toAngle(radian) {
+        return radian / Math.PI * 180;
+    }
+    var imgSrc = ['birds', 'land', 'sky', 'pipe1', 'pipe2'];
+    var loadImages = function(imgSrc, callback) {
+        var loadedCount = 0,
+            length = imgSrc.length,
+            imgList = {};
+        imgSrc.forEach(function(value) {
+            var img = new Image();
+            img.src = 'img/' + value + '.png';
+            imgList[value] = img;
+            img.addEventListener('load', function() {
+                loadedCount++;
+                if (loadedCount >= length) {
+                    callback(imgList);
+                }
+            });
+        });
+    };
+
+    loadImages(imgSrc, function(imgList) {
+        var rools = [];
+        var start = true;
+        for (var i = 0; i < 2; i++) {
+            var sky = new Fly.Sky({
+                img: imgList['sky'],
+                context: ctx,
+                x: imgList['sky'].width * i
+            });
+            rools.push(sky);
+        }
+
+        for (var i = 0; i < 6; i++) {
+            var pipe = new Fly.Pipe({
+                imgTop: imgList['pipe2'],
+                imgBottom: imgList['pipe1'],
+                context: ctx,
+                x: imgList['pipe1'].width * 3 * i + 350
+            })
+
+            rools.push(pipe);
+
+        }
+        for (var i = 0; i < 4; i++) {
+            var land = new Fly.Land({
+                img: imgList['land'],
+                context: ctx,
+                x: imgList['land'].width * i,
+                y: cv.height - imgList['land'].height
+            });
+            rools.push(land)
+
+        }
+        //绘制小鸟
+        var b = new Fly.Bird({
+                img: imgList['birds']
+            })
+            //上一帧时间
+        var lastTime = new Date() - 0;
+        //时间间隔
+        var delta = 0;
+        var render = function() {
+            if (start) {
+                ctx.clearRect(0, 0, cv.width, cv.height);
+                ctx.save();
+                ctx.beginPath();
+                //当前时间
+                var nowTime = new Date() - 0;
+                delta = nowTime - lastTime;
+                lastTime = nowTime;
+                rools.forEach(function(rool) {
+                    rool.render(delta);
+                })
+                b.render(delta);
+                if(b.y <= 10 || b.y >= cv.height - imgList['land'].height-10 || ctx.isPointInPath(b.x, b.y) 
+                    ){
+                    start = false; 
+                }
+                
+                console.log(b.x,b.y);
+                ctx.restore();
+                window.requestAnimationFrame(render);
+            }
+        }
+        window.requestAnimationFrame(render);
+        window.addEventListener('click', function() {
+            b.changeS(-0.3);
+        })
+    });
+    </script>
+</body>
+
+</html>
